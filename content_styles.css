@@ -1,0 +1,56 @@
+@font-face{
+    font-family: "Roboto Mono";
+    src: url("https://fonts.googleapis.com/css?family=Roboto+Mono:500&display=swap");
+}
+
+.queue-button-hold{
+    font-family: "Arial";
+    font-weight: bold;
+    font-size: 12px;
+
+    z-index: 999;
+
+    width: 28px;
+    height: 28px;
+
+    border-radius: 2px;
+
+    color: white;
+    background-color: black;
+
+    margin: 4px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: absolute;
+    /* top:0;
+    left:0; */
+
+    cursor: pointer;
+    opacity: .8;
+    
+}
+
+.add-img{
+    width: 18px;
+    height: 18px;
+
+    z-index: 999;
+
+    opacity: 1;
+
+    filter: invert(90%);
+
+    transition: border .1s linear;
+}
+
+
+.queue-button-hold:hover{
+    border: .5px solid cornflowerblue;
+
+    opacity: .8;
+}
+
+

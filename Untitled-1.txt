@@ -1,0 +1,43 @@
+
+console.log("Your extension is working!");
+
+let savedLinks = [];
+let thumbnailsOnPage = [];
+let target = document.getElementById('primary');
+let imgURL = chrome.extension.getURL("assets/plus.png");
+
+let videos = document.getElementsByClassName("yt-simple-endpoint inline-block style-scope ytd-thumbnail");
+   
+// go through all "videos" which were DOM elements with class name matching above
+// check if we have already applied our queue button to the element; if so, skip, if not, add the button and push it to our recorded list
+for(vid of videos){
+    if(!(thumbnailsOnPage.includes(vid))){
+        thumbnailsOnPage.push(vid);
+
+        // create a div to hold the queue button and an img element for a plus icon
+        let textnode = document.createElement("div");  
+        textnode.className = "queue-button-hold";
+        textnode.innerHTML = "<img class='add-img'>";            
+
+        // append that new content to the current "video" DOM element, making it look similar to time and watch later overlays on thumbnail
+        vid.appendChild(textnode); 
+        addQueueButton(vid);
+    }
+}
+
+// after we have appended the queue button to every necessary DOM element, we will set the img src for each of those divs holding our button to a specified one!
+let eles = document.getElementsByClassName("add-img");
+for(ele of eles){
+    ele.src = imgURL;
+}
+
+// necessary for watching for new element/thumbnails loading on page; so we can add our queue button
+let config = { attributes: false, childList: true, subtree:true, characterData: false };
+observer.observe(target, config);
+
+// will be used later for handling users queue
+function addQueueButton(thumbnail){
+    // thumbnail.style['opacity'] = .3;
+    let thumblink = "www.youtube.com" + thumbnail.getAttribute("href");
+
+}

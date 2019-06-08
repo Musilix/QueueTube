@@ -1,0 +1,47 @@
+{
+    "background": {
+        "scripts": ["background.js"]
+    },
+
+    "manifest_version" : 2,
+    "name" : "QueueTube",
+    "version": "0.1",
+
+    "content_scripts": [
+        {
+          "matches": [
+              "*://www.youtube.com/*"
+          ],
+          "all_frames": false,
+          "run_at": "document_end",
+          "js": ["jquery.min.js", "lib.js", "content.js"],
+          "css":["content_styles.css"]
+        }
+    ],
+    "web_accessible_resources": [
+        "assets/plus.png",
+        "content.js"
+    ],
+    "permissions":[ 
+        "http://*/*", 
+        "https://*/*",
+        "*://www.youtube.com/*",
+        "tabs",
+        "storage",
+        "webNavigation"
+    ],
+    "description":"The easiest way to queue up your favorite videos!",
+    "icons": {
+        "16": "./assets/icons/icon16.png",
+        "48": "./assets/icons/icon48.png",
+        "128": "./assets/icons/icon128.png"
+    },
+    "browser_action": {
+        "default_popup":"./popup.html",
+        "default_icons": {
+            "16": "./assets/icons/icon16.png",
+            "48": "./assets/icons/icon48.png",
+            "128": "./assets/icons/icon128.png"
+         }
+    }
+}
