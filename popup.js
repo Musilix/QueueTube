@@ -21,7 +21,7 @@ window.addEventListener("DOMContentLoaded", function(){
 let playlist = $("#playlist");
 let remove_butt = chrome.extension.getURL("assets/delete-button.png");
 let queue_vid_container = "";
-chrome.storage.local.get("queue_list", function(results){
+chrome.storage.local.get(["queue_list", "most_recent"], function(results){
     let videos = results.queue_list;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@ chrome.storage.local.get("queue_list", function(results){
     if(videos === undefined || videos.length === 0){
         queue_vid_container = $([
                                    "<div id='empty_queue_container'>",
-                                        "<h3>Your queue is currently empty! Start adding! :-)</h3>",
+                                        "<h3>Your queue is empty! Start adding! :-)</h3>",
                                     "</div>" 
                                    ].join("\n"));
 
@@ -55,48 +55,46 @@ chrome.storage.local.get("queue_list", function(results){
                                         "</div>",
                                     "</div>"
                                     ].join("\n"));
+
             
-            // if(highlightCurrentVid(vid)){
-            //     queue_vid_container
-            // }                        
+            if(vid.link === results.most_recent){
+                $(queue_vid_container).attr("id", "active");
+            }
+                                   
             $(playlist).append(queue_vid_container);
         }
     }
-
-    //would have hadd one append statement at end, but we must append all throughout queue loop
-    // $(playlist).append(queue_vid_container);
 });
 
-
-
-function highlightCurrcheckIfentVid(queueVid){
-    let isPlaying = false;
+function realTimeHighlight(){
     chrome.storage.local.get("most_recent", function(results){
-        let currVid = results.most_recent;
-        if(currVid.title === queueVid.title && currVid.author === queueVid.author && currVid.thumbnail === queueVid.thumbnail && currVid.link === queueVid.link){
-            isPlaying = true;
-        }else{
-            isPlaying = false;
-        }
+        let most_recent = results.most_recent;
+        let container;
+        $(".queue_vid_container_link").each(function(i){
+            container=$(this).parent();
+            if($(this).attr("href") !== most_recent){
+                $(container).attr("id", "waiting");
+            }else{
+                $(container).attr("id", "active");
+            }
+        });
     });
 
-    return isPlaying;
 }
-
 
 function getCurrentQueue(reason){
     chrome.storage.local.get("queue_list", function(result){
         let current_queue = (result.queue_list) ? result.queue_list : [];
         
         if(current_queue.length === 0){
-            console.log("your queue is empty");
+            createMessage("Your Queue is Empty!");
         }else{
             if(reason == "start"){
                 startPlayingQueue(current_queue);
             }else if(reason == "next"){
-                playNextQueueVid(current_queue);
+                playVideo(current_queue, reason);
             }else if(reason == "previous"){
-                playPreviousVid(current_queue);
+                playVideo(current_queue, reason);
             }
         }
     });
@@ -105,53 +103,70 @@ function getCurrentQueue(reason){
 //begin queue by getting first vid in queue list and sending a request to background script to
 //redirect to that page! after we find that the video has finished, we will remove the video from the queue
 function startPlayingQueue(queue){
-    let currVid = queue[0].link;
-
-    chrome.storage.local.set({most_recent: currVid});
-    chrome.runtime.sendMessage({curr_vid: currVid});
-}
-
-function playNextQueueVid(queue){
-    // remove video that was just played!
-    // queue.splice(0,1);
-
-    // in the future though, a person can click any video in their queue to play, and so, removing the first video from the list will
-    // not be good enough... will have to have some correspoding ID/index kind of stuff or something
-    
-    chrome.storage.local.set({queue_list: queue});
-
+    let currVid;
     chrome.storage.local.get("most_recent", function(results){
-        let most_recent = (results.most_recent) ? results.most_recent : queue[0].link; //or queue[1].link?
-       
-        chrome.storage.local.get("queue_list", function(result){
-            let vid_link = getNextVid(result.queue_list, most_recent);
-            if(vid_link){
-                chrome.storage.local.set({most_recent: vid_link});
-                chrome.runtime.sendMessage({curr_vid: vid_link});
-            }else{
-                console.log("End of Queue Reached!");
-            }
-        });
+        if(results.most_recent){
+            currVid = results.most_recent;
+        }else{
+            currVid = queue[0].link;
+        }
+
+        chrome.storage.local.set({most_recent: currVid}, ()=>{realTimeHighlight();});
+        chrome.runtime.sendMessage({curr_vid: currVid});
     });
 }
 
-function playPreviousVid(queue){
+function playVideo(queue, direction){
+    clearMessageBox();
+    
+    chrome.storage.local.set({queue_list: queue});
 
+    chrome.storage.local.get(["queue_list", "most_recent"], function(results){
+        let most_recent = (results.most_recent) ? results.most_recent : queue[0].link; //or queue[1].link?
+       
+        let vid_link = getVid(results.queue_list, most_recent, direction);
+
+        if(vid_link){
+            chrome.storage.local.set({most_recent: vid_link}, ()=>{realTimeHighlight();});
+            chrome.runtime.sendMessage({curr_vid: vid_link});
+            
+        }else{
+            createMessage("No more videos in this direction!");
+        }
+        
+    });
 }
 
-function getNextVid(queue, lastPlayed){
+function getVid(queue, lastPlayed, direction){
+    let lastPlayedIndex = findLastPlayedIndex(queue, lastPlayed);
+    let isFound = checkIfExists(queue, lastPlayedIndex, direction);
+
+    if(isFound !== -1){
+        return isFound;
+    }else{
+        console.log("end of queue reached!");
+        return;
+    }
+}
+
+function findLastPlayedIndex(queue, lastPlayed){
     for(let i = 0; i < queue.length; i++){
         if(queue[i].link === lastPlayed){
-            if(queue[i + 1]){
-                return queue[i+1].link;
-            }else{
-                return;
-            }
+            return i;
         }
-    }  
+    } 
 }
 
-function spliceAfterUpdate(queue, i){
+function checkIfExists(queue, lastPlayedIndex, direction){
+    let displacement = (direction === "previous") ? -1 : 1;
+    if(queue[lastPlayedIndex + displacement]){
+        return queue[lastPlayedIndex + displacement].link;
+    }else{
+        return -1;
+    }
+}
+
+function spliceList(queue, i){
     //after using indices in queue list, splice the queue to finalize changes
     queue.splice(i, 1);
     chrome.storage.local.set({queue_list: queue});
@@ -171,6 +186,26 @@ function checkIfEmpty(queue){
     }
 }
 
+function clearMessageBox(){
+    let append_to_here = $("#message-holder");
+
+    $(append_to_here).empty();
+}
+
+function createMessage(message_text){
+    let message = message_text;
+    let append_to_here = $("#message-holder");
+    let message_DOM_ele = $(["<div class = 'info-message'>",
+                                "<p>" + message + "</p>",
+                            "</div>"].join("\n"));
+
+    
+
+    $(append_to_here).append(message_DOM_ele);
+
+    $(message_DOM_ele).animate({opacity: 1}, 300);
+}
+
 
 /////////////////////////////////////////////////////
 // POPUP EVENT HANDLERS ///////////////////////////
@@ -180,25 +215,46 @@ function checkIfEmpty(queue){
 ///////////////////////////////////////////////
 
 $("#start-queue").on("click", function(){
-    console.log("start");
+    // console.log("start");
     getCurrentQueue("start");
     // activateSkipAndReverse();
 });
 
 $("#skip-vid").on("click", function(){
-    console.log("next");
+    // console.log("next");
     getCurrentQueue("next");
+});
+
+$("#reverse-vid").on("click", function(){
+    // console.log("next");
+    getCurrentQueue("previous");
 });
 
 $(document).on("click", ".queue_vid_container_link", function(e){
     let explicitly_clicked = $(this)[0].href;
-    chrome.storage.local.set({most_recent: explicitly_clicked});
+    chrome.storage.local.set({most_recent: explicitly_clicked}, ()=>{realTimeHighlight();});
 
-    chrome.storage.local.get("most_recent", function(r){
-        console.log(r.most_recent);
-    });
+    // chrome.storage.local.get("most_recent", function(r){
+    //     console.log(r.most_recent);
+    // });
 
     chrome.runtime.sendMessage({curr_vid: explicitly_clicked});
+});
+
+$("#clear-queue").on("click", function(){
+    chrome.storage.local.get("queue_list", function(res){
+        while(res.queue_list.length > 0){
+            spliceList(res.queue_list, 0);
+        }
+
+        checkIfEmpty(res.queue_list);
+    });
+
+    let nodes_to_remove = $(".queue_vid_container");
+
+    for(let i = 0; i < nodes_to_remove.length; i++){
+        $(nodes_to_remove[i]).remove();
+    }
 });
 
 $(document).on("click", "#remove-butt-cont", function(){
@@ -213,39 +269,37 @@ $(document).on("click", "#remove-butt-cont", function(){
 
     //look... i know this pyramid may look nasty, but its truly needed as there is no other way to retrieve active tab in popup windows... and we NEED TO CHECK if the vid
     //we are removing from the queue is actually the most recent; so to know if we will skip to next vid in or queue or not
-    chrome.storage.local.get("queue_list", function(results){
+    chrome.storage.local.get(["queue_list", "most_recent"], function(results){
         let queue = results.queue_list;
         for(let i = 0; i < queue.length; i++){
             if(queue[i].link === link_ref){
                 //good ol' JS... as we see here, we have the pyramid of DEATH forming...
-                chrome.storage.local.get("most_recent", function(result){
-                    chrome.tabs.query({active:true, currentWindow: true}, function(res){
-                        //for some reason i was check if the curr window had the url, but i cant remember why? if i do, heres the method i was using to get the url
-                        //(res[0].url).replace(/&ab_channel=.*/, "") === queue[i].link
-                        
-                        //check if most recent vid played in queue is the one we are removing, check if queue has more than one vid(which would be the one we are removing),
-                        //and check if the curr windows url is the same as the most recent/one we are removing
-                        if(result.most_recent === queue[i].link && queue.length > 1){
-                            //usually if the curr vid is removed from queue, we go to the next, but if the next is undefined, we will actually go back to the previous!... maybe 
-                            //change this in the future tho truly...
-                            if(queue[i+1] !== undefined){
-                                let vid_after_curr = queue[i+1].link;
-    
-                                //send the next vid after the vid that was removed if curr vid playin was the one u removed... and update most recent and actual queue now!
-                                chrome.extension.sendMessage({curr_vid: vid_after_curr});
-                                chrome.storage.local.set({most_recent: vid_after_curr});
-                            }else if(queue[i+1] === undefined){
-                                let vid_before_curr = queue[i-1].link;
-    
-                                //send the next vid after the vid that was removed if curr vid playin was the one u removed... and update most recent and actual queue now!
-                                chrome.extension.sendMessage({curr_vid: vid_before_curr});
-                                chrome.storage.local.set({most_recent: vid_before_curr});
-                            }
+                chrome.tabs.query({active:true, currentWindow: true}, function(res){
+                    //for some reason i was check if the curr window had the url, but i cant remember why? if i do, heres the method i was using to get the url
+                    //(res[0].url).replace(/&ab_channel=.*/, "") === queue[i].link
+                    
+                    //check if most recent vid played in queue is the one we are removing, check if queue has more than one vid(which would be the one we are removing),
+                    //and check if the curr windows url is the same as the most recent/one we are removing
+                    if(results.most_recent === queue[i].link && queue.length > 1){
+                        //usually if the curr vid is removed from queue, we go to the next, but if the next is undefined, we will actually go back to the previous!... maybe 
+                        //change this in the future tho truly...
+                        if(queue[i+1] !== undefined){
+                            let vid_after_curr = queue[i+1].link;
+
+                            //send the next vid after the vid that was removed if curr vid playin was the one u removed... and update most recent and actual queue now!
+                            chrome.extension.sendMessage({curr_vid: vid_after_curr});
+                            chrome.storage.local.set({most_recent: vid_after_curr}, ()=>{realTimeHighlight();});
+                        }else if(queue[i+1] === undefined){
+                            let vid_before_curr = queue[i-1].link;
+
+                            //send the next vid after the vid that was removed if curr vid playin was the one u removed... and update most recent and actual queue now!
+                            chrome.extension.sendMessage({curr_vid: vid_before_curr});
+                            chrome.storage.local.set({most_recent: vid_before_curr}, ()=>{realTimeHighlight();});
                         }
-    
-                        spliceAfterUpdate(queue, i);
-                        checkIfEmpty(queue);
-                    });
+                    }
+
+                    spliceList(queue, i);
+                    checkIfEmpty(queue);
                 });
                 
                 //break out of loop after removal/locating of ele needed to be removed

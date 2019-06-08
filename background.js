@@ -15,9 +15,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, senderResponse){
                 //NVM... just gonna call tabs query to get active tab to update origin tab easily and update curr window easily... the nesting of asyn isn't pretty smh
                 if(chrome.runtime.lastError){
                     console.log("origin tab closed... creating new one");
-                    chrome.tabs.query({active: true, lastFocusedWindow: true}, function(tabs){
-                        chrome.storage.local.set({originTab: tabs[0].id});
-                        chrome.tabs.update(tabs[0].id, {url: redirect_to_here});
+                    chrome.tabs.create({url: redirect_to_here}, function(newTab){
+                        console.log("new tab opened");
+                        console.log(newTab.id);
+                        chrome.storage.local.set({originTab: newTab.id});
                     });
                 }
             });

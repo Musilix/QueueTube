@@ -105,26 +105,46 @@ function executeAll(){
     
     // content script testing video ending detection... doesnt work fully
     // as if i skip to end of video, it doesnt register... frip
-    actual_video = $('video').get(0);
-    // let tab_running_queue = ;
+    var actual_video = $('video').get(0);
+    var vid_container = $('#movie_player').get(0);
+    console.log(vid_container);
+    console.log(actual_video);
     
+// fullscreen:      html5-video-player ytp-transparent ytp-large-width-mode ad-created ytp-iv-drawer-enabled iv-module-loaded paused-mode ytp-fullscreen ytp-big-mode
+// nonfullscreen:   html5-video-player ytp-transparent ytp-large-width-mode ad-created ytp-iv-drawer-enabled iv-module-loaded paused-mode ytp-hide-info-bar
     if(actual_video !== undefined){
-        actual_video.addEventListener('ended', function(state){
-            //currently we will get active tabs ID, and see if is the same as the one which started the queue; if not, we do NOT
-            //go to next vid in queue on that page... we only go to next 
-            
-            retrieve_and_play_current_queue();
+        chrome.storage.local.get("fullscreenSet", function(result){
+            console.log(vid_container);
+            console.log(result.fullscreenSet);
+            // if(vid_container !== undefined && result.fullscreenSet === true){
+            //     console.log("requesting fullscreen...");
+            //     vid_container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+            // }
+
+            actual_video.addEventListener('ended', function(state){
+                let FS_indicator = $(vid_container).hasClass("ytp-fullscreen");
+                console.log("FS_INDICATOR:");
+                console.log(FS_indicator);
+                
+                chrome.storage.local.set({fullscreenSet: FS_indicator});
+              
+                //currently we will get active tabs ID, and see if is the same as the one which started the queue; if not, we do NOT
+                //go to next vid in queue on that page... we only go to next 
+                
+                retrieve_and_play_current_queue();
+            });
         });
+
+        
+        //currently waiting 4.5s before initializing and setting up observers on pages. this is NOT good.
+        //we will need to make this time much lower or get rid of it entirely in future as ppl can begin scrolling thru page
+        //way before we set up anything! try lower times for certain conditions or wait for certain items to load only... usually 1s to 2s 
+        //is good. But on channel pages, there can come to be A LOT of uploads being shown that arent rendered bfore we start our extension,
+        //so that needs to be handled too!
     }
-    
-    //currently waiting 4.5s before initializing and setting up observers on pages. this is NOT good.
-    //we will need to make this time much lower or get rid of it entirely in future as ppl can begin scrolling thru page
-    //way before we set up anything! try lower times for certain conditions or wait for certain items to load only... usually 1s to 2s 
-    //is good. But on channel pages, there can come to be A LOT of uploads being shown that arent rendered bfore we start our extension,
-    //so that needs to be handled too!
+
     setTimeout(()=>{set_up_observer()}, 2700);
-    
-    // });
+
     
     /////////////////////////////////////////////////////////////
     //////// EVENT HANDLERS ////////////////////////////////////
@@ -159,9 +179,9 @@ function executeAll(){
             if(!checkForInstance(current_queue, queue_vid_instance)){
                 current_queue.push(queue_vid_instance);
     
-                chrome.storage.local.set({queue_list: current_queue}, alert("successfully added!"));
+                chrome.storage.local.set({queue_list: current_queue}, createMessage("successfully added!", "success"));
             }else{
-                alert("video already in queue");
+                createMessage("video already in queue", "failure");
             }
         });
     

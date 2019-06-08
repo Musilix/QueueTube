@@ -14,7 +14,7 @@
           ],
           "all_frames": false,
           "run_at": "document_end",
-          "js": ["jquery.min.js", "lib.js", "content.js"],
+          "js": ["jquery-3.4.1.min.js", "lib.js", "content.js"],
           "css":["content_styles.css"]
         }
     ],

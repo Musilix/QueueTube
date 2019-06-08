@@ -1,7 +1,8 @@
 @font-face{
-    font-family: "Roboto Mono";
+    font-family: 'Roboto Mono';
     src: url("https://fonts.googleapis.com/css?family=Roboto+Mono:500&display=swap");
 }
+
 
 .queue-button-hold{
     font-family: "Arial";
@@ -51,6 +52,52 @@
     border: .5px solid cornflowerblue;
 
     opacity: .8;
+}
+
+.info-message{
+    border-radius: 2px;
+
+    display: flex;
+    align-items: center;
+    text-align: center;
+
+    position: fixed;
+    bottom: -45px;
+    right: 20px;
+
+    z-index: 999;
+}
+
+.info-message p{
+    font-size: 18px;
+    font-family: 'Roboto Mono';
+    padding: 10px 15px;
+}
+
+#failure{
+    background-color: #e74c3c;
+    opacity: .85;
+    border: 1px solid #ac3123;
+
+    color: rgb(139, 11, 15);
+}
+
+#success{
+    background-color: #2ecc71;
+    opacity: .85;
+    border: 1px solid #209752;
+
+    color: #01501b;
+}
+
+#end-message, #empty-message{
+    background-color: #2ecc71;
+    opacity: 1;
+    border: 1px solid #27ae60;
+
+    color: #f5f6fa;
+
+    background-color: #353b48;
 }
 
 

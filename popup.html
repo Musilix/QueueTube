@@ -236,6 +236,75 @@
             color:  rgba(245, 246, 250,1.0);
         }
 
+        #message-holder{
+            width: 100%;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-family: 'Roboto Mono';
+        }
+
+        .info-message{
+            display: flex;
+            align-items: center;
+            text-align: center;
+
+            opacity: 0;
+
+            color: #f5f6fa;
+        }
+
+        .info-message p{
+            font-size: 12px;
+            font-family: 'Roboto Mono';
+            padding: 10px 15px;
+        }
+
+        #settings-dropdown{
+            position: relative;
+            display:inline-block;
+            
+        }
+
+        #settings{
+            font-family: 'Roboto Mono';
+            font-size: 14px;
+
+            display: none;
+            position: absolute;
+            right:3px;
+            top: 20px;
+        
+            background-color: #f1f1f1;
+            width: 110px;
+
+            text-align: center;
+
+            padding: 5px;
+
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        #settings:hover{
+            background-color: #ddd;
+            cursor: pointer;
+        }
+
+        #settings-dropdown:hover #settings{
+            display: block;
+        }
+
+        #active{
+            background-color: #303952;
+        }
+
+
+
+
+
     </style>
     <head>
         <meta charset="utf-8">
@@ -243,13 +312,19 @@
         <meta title="description" content="Find all your queued videos here!">
 
         <!-- fonts -->
+        <link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet">
 
     </head>
     <body>
         <div id="total-wrap">
             <div id="logo-wrap">
                 <img id="logo-img">
-                <img id="info-img" alt="Coming soon..." title="Coming soon...">
+                <div id="settings-dropdown">
+                    <img id="info-img" alt="Options" title="Options">
+                    <div id="settings">
+                        <div class="setting-option" id="clear-queue">Clear queue</div>
+                    </div>
+                </div>
             </div>
             <div id="playlist"></div>
             <div id="centering-wrap">
@@ -265,9 +340,12 @@
                     </div>
                 </div>
             </div>
+
+            <div id="message-holder"></div>
         </div>
 
-        <script src="./jquery.min.js"></script>
+        <script src="./jquery-3.4.1.min.js"></script>
         <script src="./popup.js"></script>
+        <!-- <script src="./lib.js"></script> -->
     </body>
 </html>

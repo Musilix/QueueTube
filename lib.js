@@ -3,30 +3,32 @@ function retrieve_and_play_current_queue(){
         let current_queue = (result.queue_list) ? result.queue_list : [];
         
         if(current_queue.length === 0){
-            console.log("your queue is empty");
+            createMessage("your queue is empty!", "empty-message");
         }else{
-            playNextVideo(current_queue);
+            playVideo(current_queue, "next");
         }
     });
 }
 
-function playPreviousVid(queue){
-
-}
-
-function playNextVideo(queue){
-    chrome.storage.local.get("most_recent", function(results){
+function playVideo(queue, direction){
+    chrome.storage.local.get(["most_recent", "queue_list"], function(results){
         let most_recent = (results.most_recent) ? results.most_recent : queue[0].link; //or queue[1].link?
-        
-        chrome.storage.local.get("queue_list", function(result){
-            let vid_link = getNextVid(result.queue_list, most_recent);
-            if(vid_link){
-                chrome.storage.local.set({most_recent: vid_link});
-                chrome.runtime.sendMessage({curr_vid: vid_link});
-            }else{
-                console.log("End of Queue Reached!");
-            }
-        });
+        let vid_link;
+
+        if(direction === "next"){
+            vid_link = getNextVid(results.queue_list, most_recent);
+        }else if(direction === "previous"){
+            vid_link = getPrevVid(results.queue_list, most_recent);
+        }
+
+        if(vid_link){
+            chrome.storage.local.set({most_recent: vid_link});
+            chrome.runtime.sendMessage({curr_vid: vid_link});
+        }else{
+            createMessage("End of Queue Reached!", "end-message");
+        }
+
+        // document.documentElement.webkitRequestFullscreen();
     });
 }
 
@@ -89,7 +91,7 @@ function set_up_observer() {
     $("ytd-browse.style-scope.ytd-page-manager").each(function(i){
         if($(this).attr("role") === "main"){
             targetNode = $(this).find("#contents")[0];
-            
+
             if($(this).attr("page-subtype") === "playlist"){
                 observe_this(targetNode, "playlist");
                 initializeButtons("playlist");
@@ -117,7 +119,7 @@ function set_up_observer() {
     //even without a related-videos section... I've yet to see it, but I guess thats wot the futures for
     let related_page_layer = document.querySelector("ytd-watch-flexy");
  
-    if(related_page_layer.getAttribute("role") === "main"){
+    if(related_page_layer !== undefined && related_page_layer.getAttribute("role") === "main"){
         //set up targetnode with this in mind
         targetNode = $(related_page_layer).find("ytd-watch-next-secondary-results-renderer")[0];
         observe_this(targetNode, "related");
@@ -127,7 +129,7 @@ function set_up_observer() {
 
     if (!targetNode) {
         window.setTimeout(()=>{set_up_observer()}, 500);
-        return;
+        // return;
     }
 }
 
@@ -188,4 +190,21 @@ function checkForInstance(queue, vidToAdd){
     }
     return false;
     // return queue.includes(vidToAdd);
+}
+
+function createMessage(message_text, id){
+    let message = message_text;
+
+    let message_DOM_ele = $(["<div class = 'info-message' id='" + id + "'>",
+                                "<p>" + message + "</p>",
+                            "</div>"].join("\n"));
+
+    $(document.body).append(message_DOM_ele);
+
+    $(message_DOM_ele).animate({
+        bottom: "30px"
+    }, 350, () => {$(message_DOM_ele).animate({
+        opacity : 0 
+    }, 1300, () => {$(message_DOM_ele).hide()});}
+    );
 }
