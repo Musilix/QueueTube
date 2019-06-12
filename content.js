@@ -183,10 +183,7 @@ function checkPageForQueueVid(e, clicked){
 
         if(queue !== undefined){
             for(let i = 0; i < queue.length; i++){
-                console.log(queue[i].link);
-                console.log(currTabURL);
                 if(queue[i].link === currTabURL){
-                    console.log("THEY EQUAL! SETTING NEW MOST RECENT");
                     let new_most_recent = currTabURL;
                     chrome.storage.local.set({most_recent: new_most_recent});
                 }
@@ -196,7 +193,6 @@ function checkPageForQueueVid(e, clicked){
 }
 
 function setUpListener(){
-    console.log("setting up listener");
     // content script testing video ending detection... doesnt work fully
     // as if i skip to end of video, it doesnt register... frip
     var actual_video = $('video').get(0);
@@ -211,10 +207,8 @@ function setUpListener(){
             //     console.log("requesting fullscreen...");
             //     vid_container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
             // }
-
             actual_video.addEventListener('ended', function(state){
                 let FS_indicator = $(vid_container).hasClass("ytp-fullscreen");
-                
                 chrome.storage.local.set({fullscreenSet: FS_indicator});
               
                 //currently we will get active tabs ID, and see if is the same as the one which started the queue; if not, we do NOT
@@ -223,7 +217,6 @@ function setUpListener(){
             });
         });
 
-        
         //currently waiting 4.5s before initializing and setting up observers on pages. this is NOT good.
         //we will need to make this time much lower or get rid of it entirely in future as ppl can begin scrolling thru page
         //way before we set up anything! try lower times for certain conditions or wait for certain items to load only... usually 1s to 2s 
