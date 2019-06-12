@@ -47,10 +47,10 @@ function getNextVid(queue, lastPlayed){
 
 function initializeOrigin(){
     // console.log("establishing origin tab...");
-    chrome.extension.sendMessage({type: "getOriginTab"}, function(result){
-            // console.log(result.activeTab);
-            originTab = result.activeTab;
-            chrome.storage.local.set({originTab: originTab});
+    chrome.extension.sendMessage({type: "getCurrTab"}, function(result){
+        // console.log(result.activeTab);
+        let currTab = result.activeTab;
+        chrome.storage.local.set({originTab: currTab});
     });
 }
 

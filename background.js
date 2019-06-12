@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, senderResponse){
         let redirect_to_here = request.curr_vid;
 
         chrome.storage.local.get("originTab", function(result){
-            chrome.tabs.update(result.originTab, {url: redirect_to_here}, function(){
+            chrome.tabs.update(result.originTab.id, {url: redirect_to_here}, function(){
                 // if origin tab no longer exits, redirect to queue vid on whichever page url made the request
                 // then update origin tab to this new page we are using! This is hard, as googles async APIs
                 // lead to this nesting of callbacks... therefore, we have no real access to sender.tab.id at the time
@@ -16,19 +16,15 @@ chrome.runtime.onMessage.addListener(function(request, sender, senderResponse){
                 if(chrome.runtime.lastError){
                     console.log("origin tab closed... creating new one");
                     chrome.tabs.create({url: redirect_to_here}, function(newTab){
-                        console.log("new tab opened");
-                        console.log(newTab.id);
-                        chrome.storage.local.set({originTab: newTab.id});
+                        chrome.storage.local.set({originTab: newTab});
                     });
                 }
             });
         });
     }
 
-    if(request.type === "getOriginTab"){
-        senderResponse({activeTab: sender.tab.id});
-    }else if(request.type === "getCurrTab"){
-        senderResponse({currTab: sender.tab});
+    if(request.type === "getCurrTab"){
+        senderResponse({activeTab: sender.tab});
     }
 });
 
