@@ -1,4 +1,4 @@
-
+console.log("Your extension is working!");
 //because youtube is SPA... this is hard to detect when each page has loaded hmmm...
 // may just have to default to a timeout of some certain amount to load function
 // var SAPObsAttrs = {attributes: true, childList: true, subtree: false};
@@ -79,14 +79,15 @@ var playListObserver = new MutationObserver(function(mutations){
 
 
 function executeAll(){
-    console.log("Your extension is working!");
-
     // this is what I had in the beginning; returns all thumbnails on page! But... as page reloads, 
     // content script cant handle dynamically laoded elements. Youtube uses PJAX, so we must handle this
     // accordingly in our background script! As this comes to be the simplest way to do so.
     // $(document).ready(function(){
     console.log("page loaded");
-    
+
+    // trying to check if the curr page's url is actually the most_recent... if so, then we update most_recent to that video
+    // another thing we must consider is if the tab which has this url is also the origintab...
+
     //set up origin tab to active page if origintab hasnt been established yet!
     //if origin tab has been established as well as closed then background script
     //will handle the redirect requests we make when playing thru queue
@@ -100,11 +101,13 @@ function executeAll(){
     //weird happening due to the async nature of chromes API calls. So I just put it all in one block to be called sequentially
     //this works now, but adds unneeded lines... sad
     chrome.runtime.sendMessage({type: "getCurrTab"}, function(results){
-        let currTab = results.currTab.id;
-        chrome.storage.local.get("originTab", function(results){
-            if(currTab === results.originTab){
+        let currTab = results.activeTab;
+        chrome.storage.local.get(["originTab"], function(result){
+            if(currTab.id === result.originTab.id){
                 setUpListener();
+                $(document).off().on("click", "ytd-thumbnail, #details", function(e){checkPageForQueueVid(e, this)});
             }
+       
         });
     });
     
@@ -158,6 +161,37 @@ function executeAll(){
         });
     
         return false;
+    });
+}
+
+//Alright, fixed previous problem; this method is now only called when we are on our origin tab and click a misc thumbnail, aka any link to a vid on youtube.com that isn't present in our
+//queue list! kool. It will make sure the queue isnt undefined and has something in it, as we will search thru it, and then it will, well... search through it to see if the curr page we
+//redirected ourselves to is actually already present in our queue list; if so, it will update our most recent vid in the queue!... this could possibly get BUGGY in the future
+
+//NVM... lots of things r named dismissable as i suspected... so there are some glitches. need a more reliable manner of doing this
+
+//NVM AGAIN... just had to use off() before on() click listener and search for href! a bit of work, but all I can think of rn
+function checkPageForQueueVid(e, clicked){
+    e.stopPropagation();
+
+    let link_container = $(clicked).find("a")[0];
+    let true_link = $(link_container).attr("href");
+    let currTabURL = "https://www.youtube.com" + true_link;
+
+    chrome.storage.local.get("queue_list", function (results) { 
+        let queue = results.queue_list;
+
+        if(queue !== undefined){
+            for(let i = 0; i < queue.length; i++){
+                console.log(queue[i].link);
+                console.log(currTabURL);
+                if(queue[i].link === currTabURL){
+                    console.log("THEY EQUAL! SETTING NEW MOST RECENT");
+                    let new_most_recent = currTabURL;
+                    chrome.storage.local.set({most_recent: new_most_recent});
+                }
+            }
+        }
     });
 }
 
