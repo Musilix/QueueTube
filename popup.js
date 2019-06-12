@@ -1,7 +1,12 @@
 //add necessary aesthetic changes once page has fully loaded dom content
 window.addEventListener("DOMContentLoaded", function(){
+    checkIfQueueIsActive("initial-loading");
+
     let play_queue_butt = document.getElementById("start-queue-img");
     play_queue_butt.src = chrome.extension.getURL("assets/play.png");
+
+    let stop_queue_butt = document.getElementById("stop-queue-img");
+    stop_queue_butt.src = chrome.extension.getURL("assets/stop.png");
 
     let next_vid_butt = document.getElementById("skip-vid-img");
     next_vid_butt.src = chrome.extension.getURL("assets/fast-forward-button.png");
@@ -14,7 +19,6 @@ window.addEventListener("DOMContentLoaded", function(){
 
     let cog_info = document.getElementById("info-img");
     cog_info.src = chrome.extension.getURL("assets/cog.png");
-
 });
 
 //draw out playlist of items
@@ -117,7 +121,7 @@ function startPlayingQueue(queue){
 }
 
 function playVideo(queue, direction){
-    clearMessageBox();
+    clearMessageBox("#message-holder");
     
     chrome.storage.local.set({queue_list: queue});
 
@@ -186,10 +190,8 @@ function checkIfEmpty(queue){
     }
 }
 
-function clearMessageBox(){
-    let append_to_here = $("#message-holder");
-
-    $(append_to_here).empty();
+function clearMessageBox(message_box){
+    $(message_box).empty();
 }
 
 function createMessage(message_text){
@@ -206,6 +208,70 @@ function createMessage(message_text){
     $(message_DOM_ele).animate({opacity: 1}, 300);
 }
 
+function checkIfQueueIsActive(event){
+    clearMessageBox("#active-queue-message");
+
+    let appendActiveQueueMessage = $("#active-queue-message");
+    let queueActiveMessage;
+
+    chrome.storage.local.get(["queueIsActive", "originTab"], function(result){
+        if(result.queueIsActive === true){
+            queueActiveMessage = "Your queue is active";
+            if(event === "initial-loading") {toggleButton("stop");}
+            chrome.tabs.query({active:true, lastFocusedWindow:true}, function(tabs){
+                let currPage = tabs[0].id;
+                let originPage = result.originTab.id;
+
+                if(currPage === originPage){
+                    queueActiveMessage += " in this tab";
+                }
+
+                $(appendActiveQueueMessage).append(queueActiveMessage).css({opacity:0}).animate({opacity:1});
+            });
+        }
+    });
+}
+
+function toggleButton(toggle){
+    let buttonToHide;
+    let buttonToShow;
+
+    if(toggle === "start"){
+        buttonToHide = $("#stop-queue");
+        buttonToShow = $("#start-queue");
+    }else if(toggle === "stop"){
+        buttonToHide = $("#start-queue");
+        buttonToShow = $("#stop-queue");
+    }
+
+    $(buttonToHide).hide();
+    $(buttonToShow).show().css({display: "flex"});
+}
+
+
+//the toggle queue method will be for when the play and stop buttons are clicked... in turn either activating or deactivating our queue!
+function toggleQueue(){
+    let toggle;
+    chrome.storage.local.get("queueIsActive", function(result){
+        if(result.queueIsActive !== true || result.queueIsActive === undefined){
+            toggle = true;
+        }else{
+            toggle = false;
+        }
+        chrome.storage.local.set({queueIsActive: toggle}, ()=>{checkIfQueueIsActive();});
+    });
+}
+
+//the activate queue method will be used when a vid thumbnail is explicitly clicked in the popup queue list... there is no toggle here as that would lead
+//to every other video thumbnail click deactivating the queue... rather, we just activate it if it hasn't already been...
+function activateQueue(){
+    chrome.storage.local.get("queueIsActive", function(result){
+        if(result.queueIsActive !== true){
+            chrome.storage.local.set({queueIsActive: true}, ()=>{checkIfQueueIsActive();});
+        }
+    });
+}
+
 
 /////////////////////////////////////////////////////
 // POPUP EVENT HANDLERS ///////////////////////////
@@ -215,28 +281,35 @@ function createMessage(message_text){
 ///////////////////////////////////////////////
 
 $("#start-queue").on("click", function(){
-    // console.log("start");
     getCurrentQueue("start");
-    // activateSkipAndReverse();
+    toggleQueue();
+    toggleButton("stop");
+});
+
+$("#stop-queue").on("click", function(){
+    toggleQueue();
+    toggleButton("start");
+
 });
 
 $("#skip-vid").on("click", function(){
-    // console.log("next");
     getCurrentQueue("next");
 });
 
 $("#reverse-vid").on("click", function(){
-    // console.log("next");
     getCurrentQueue("previous");
 });
 
+$("#reverse-vid, #skip-vid").on("click", function(){
+    activateQueue();
+    toggleButton("stop");
+});
+
 $(document).on("click", ".queue_vid_container_link", function(e){
+    activateQueue();
+
     let explicitly_clicked = $(this)[0].href;
     chrome.storage.local.set({most_recent: explicitly_clicked}, ()=>{realTimeHighlight();});
-
-    // chrome.storage.local.get("most_recent", function(r){
-    //     console.log(r.most_recent);
-    // });
 
     chrome.runtime.sendMessage({curr_vid: explicitly_clicked});
 });
@@ -312,6 +385,4 @@ $(document).on("click", "#remove-butt-cont", function(){
 
     // remove from DOM
     $(node_to_remove).remove();
-
-    // console.log(node_to_remove);
 });

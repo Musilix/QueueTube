@@ -74,6 +74,21 @@ html,body, #total-wrap{
     height: 40px;
 }
 
+#active-queue-message{
+    display: flex;
+    flex-direction: row;
+
+    align-items: center;
+    justify-content: center;
+
+    font-family: "Roboto Mono";
+    font-size: 10px;
+
+    color: rgb(23, 182, 36);
+
+    padding: 5px 10px;
+}
+
 #info-img{
     filter: invert(85%);
 
@@ -89,7 +104,7 @@ html,body, #total-wrap{
     cursor: pointer;
 }
 
-#start-queue, #skip-vid, #reverse-vid{
+#start-queue, #stop-queue, #skip-vid, #reverse-vid{
     /* background-color:aquamarine; */
     width: 28px;
     height: 28px;
@@ -105,7 +120,11 @@ html,body, #total-wrap{
     transition: opacity .3s linear;
 }
 
-#start-queue-img, #skip-vid-img, #reverse-vid-img{
+#stop-queue{
+    display: none;
+}
+
+#start-queue-img, #stop-queue-img, #skip-vid-img, #reverse-vid-img{
     width: 21px;
     height: 21px;
 }
@@ -114,7 +133,7 @@ html,body, #total-wrap{
     transform:rotateY(180deg);
 }
 
-#start-queue:hover, #skip-vid:hover, #reverse-vid:hover{
+#start-queue:hover, #stop-queue:hover, #skip-vid:hover, #reverse-vid:hover{
     cursor: pointer;
 
     opacity: .65;
@@ -254,7 +273,8 @@ html,body, #total-wrap{
 .info-message p{
     font-size: 12px;
     font-family: 'Roboto Mono';
-    padding: 10px 15px;
+    margin: 0;
+    padding: 5px 15px;
 }
 
 #settings-dropdown{
