@@ -27,6 +27,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, senderResponse){
 
     if(request.type === "getOriginTab"){
         senderResponse({activeTab: sender.tab.id});
+    }else if(request.type === "getCurrTab"){
+        senderResponse({currTab: sender.tab});
     }
 });
 
