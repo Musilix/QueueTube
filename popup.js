@@ -279,6 +279,14 @@ function activateQueue(){
 //handling play and skip button, as well as//////
 //explicitly clicking a vid link////////////////
 ///////////////////////////////////////////////
+$("#playlist").sortable({
+  
+    axis: "y",
+    revert: true,
+    scroll: false,
+    cursor: "move"
+  
+});
 
 $("#start-queue").on("click", function(){
     getCurrentQueue("start");
@@ -309,7 +317,7 @@ $(document).on("click", ".queue_vid_container_link", function(e){
     activateQueue();
 
     let explicitly_clicked = $(this)[0].href;
-    chrome.storage.local.set({most_recent: explicitly_clicked}, ()=>{realTimeHighlight();});
+    chrome.storage.local.set({most_recent: explicitly_clicked}, ()=>{realTimeHighlight(); toggleButton("stop");});
 
     chrome.runtime.sendMessage({curr_vid: explicitly_clicked});
 });
